@@ -3,7 +3,7 @@ use cargotomllsp::{
     completion_handler::handle_completion,
     cratesio::init_crate_store,
     logging::setup_logging,
-    notification_handlers::handle_doc_change,
+    notification_handlers::{handle_doc_change, handle_doc_open},
     text_store::init_text_store,
 };
 use tracing::{error, info, warn};
@@ -43,12 +43,13 @@ async fn lsp_loop(connection: lsp_server::Connection, _params: serde_json::Value
                 };
             }
 
-            lsp_server::Message::Notification(req) => match req.method.as_str() {
+            lsp_server::Message::Notification(notification) => match notification.method.as_str() {
                 "textDocument/didSave" => {
-                    info!("Did save: {:?}", req);
+                    info!("Did save: {:?}", notification);
                 }
-                "textDocument/didChange" => handle_doc_change(req),
-                _ => warn!("Unhandled notification: {:?}", req),
+                "textDocument/didOpen" => handle_doc_open(notification),
+                "textDocument/didChange" => handle_doc_change(notification),
+                _ => warn!("Unhandled notification: {:?}", notification),
             },
 
             _ => {}
