@@ -1,46 +1,20 @@
 use anyhow::Result;
 use cargotomllsp::{
-    completion_handler::handle_completion, cratesio::init_crate_store,
-    notification_handlers::handle_doc_change, text_store::init_text_store,
+    completion_handler::handle_completion,
+    cratesio::init_crate_store,
+    logging::setup_logging,
+    notification_handlers::handle_doc_change,
+    text_store::init_text_store,
 };
+use tracing::{error, info, warn};
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn setup_stores() {
     init_crate_store();
     init_text_store();
-    let (connection, io_threads) = lsp_server::Connection::stdio();
-
-    let server_capabilities = serde_json::to_value(lsp_types::ServerCapabilities {
-        completion_provider: Some(lsp_types::CompletionOptions {
-            resolve_provider: Some(true),
-            trigger_characters: Some(vec!["\"".to_string()]),
-            all_commit_characters: None,
-            completion_item: Some(lsp_types::CompletionOptionsCompletionItem {
-                label_details_support: Some(true),
-            }),
-            work_done_progress_options: lsp_types::WorkDoneProgressOptions {
-                work_done_progress: None,
-            },
-        }),
-        // definition_provider: Some(lsp_types::OneOf::Left(true)),
-        text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Kind(
-            lsp_types::TextDocumentSyncKind::FULL,
-        )),
-        ..Default::default()
-    })?;
-    eprintln!("Starting the server");
-    let params = connection.initialize(server_capabilities)?;
-    lsp_loop(connection, params).await?;
-
-    io_threads.join()?;
-    eprintln!("Closing the server");
-    Ok(())
 }
 
-async fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value) -> Result<()> {
-    eprintln!("Waiting for msgs...");
+async fn lsp_loop(connection: lsp_server::Connection, _params: serde_json::Value) -> Result<()> {
     for msg in &connection.receiver {
-        eprintln!("Got a msg: {msg:?}");
         match msg {
             lsp_server::Message::Request(req) => {
                 if connection.handle_shutdown(&req)? {
@@ -91,4 +65,38 @@ where
     R::Params: serde::de::DeserializeOwned,
 {
     req.extract(R::METHOD)
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    setup_logging()?;
+    setup_stores();
+
+    let (connection, io_threads) = lsp_server::Connection::stdio();
+    let server_capabilities = serde_json::to_value(lsp_types::ServerCapabilities {
+        completion_provider: Some(lsp_types::CompletionOptions {
+            resolve_provider: Some(true),
+            trigger_characters: Some(vec!["\"".to_string()]),
+            all_commit_characters: None,
+            completion_item: Some(lsp_types::CompletionOptionsCompletionItem {
+                label_details_support: Some(true),
+            }),
+            work_done_progress_options: lsp_types::WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        }),
+        // definition_provider: Some(lsp_types::OneOf::Left(true)),
+        text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Kind(
+            lsp_types::TextDocumentSyncKind::FULL,
+        )),
+        ..Default::default()
+    })?;
+
+    info!("Starting the server");
+    let params = connection.initialize(server_capabilities)?;
+    lsp_loop(connection, params).await?;
+
+    io_threads.join()?;
+    info!("Closing the server");
+    Ok(())
 }
