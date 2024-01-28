@@ -13,9 +13,7 @@ Currently, server is capable of supplying:
 In the future this will maybe be available through [Mason](https://github.com/williamboman/mason.nvim). For now, you have to have Rust installed, and then you have to install by running:
 
 ```bash
-$ git clone https://github.com/BlankTiger/cargotomllsp
-$ cd cargotomllsp
-$ cargo install --path .
+$ cargo install cargotomllsp
 ```
 
 ### Neovim ⚡
