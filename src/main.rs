@@ -1,6 +1,6 @@
 use anyhow::Result;
 use cargotomllsp::{
-    completion_handler::handle_completion,
+    completion_handlers::handle_completion,
     cratesio::init_crate_store,
     logging::setup_logging,
     notification_handlers::{handle_doc_change, handle_doc_open},
@@ -44,11 +44,9 @@ async fn lsp_loop(connection: lsp_server::Connection, _params: serde_json::Value
             }
 
             lsp_server::Message::Notification(notification) => match notification.method.as_str() {
-                "textDocument/didSave" => {
-                    info!("Did save: {:?}", notification);
-                }
                 "textDocument/didOpen" => handle_doc_open(notification),
                 "textDocument/didChange" => handle_doc_change(notification),
+                "textDocument/didSave" => info!("Did save: {:?}", notification),
                 _ => warn!("Unhandled notification: {:?}", notification),
             },
 

@@ -36,3 +36,12 @@ pub fn get_text_document(uri: Url) -> Option<String> {
         .get(&uri.to_string())
         .cloned();
 }
+
+pub fn write_text_document(uri: Url, text: String) {
+    TEXT_STORE
+        .get()
+        .expect("text store not initialized")
+        .lock()
+        .expect("text store mutex poisoned")
+        .insert(uri.to_string(), text);
+}

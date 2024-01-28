@@ -20,7 +20,7 @@ static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
         .unwrap()
 });
 
-type Crates = HashMap<String, String>;
+type Crates = HashMap<String, CrateInfo>;
 
 pub struct CrateStore(Crates);
 
@@ -43,10 +43,30 @@ pub fn init_crate_store() {
     _ = CRATE_STORE.set(Arc::new(Mutex::new(CrateStore(HashMap::new()))));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CrateInfo {
     pub name: String,
     pub version: String,
+    pub features: Vec<String>,
+}
+
+pub fn get_stored_crate_info(name: &str) -> Option<CrateInfo> {
+    return CRATE_STORE
+        .get()
+        .expect("text store not initialized")
+        .lock()
+        .expect("text store mutex poisoned")
+        .get(name)
+        .cloned();
+}
+
+pub fn write_crate_info_to_store(name: &str, info: CrateInfo) {
+    CRATE_STORE
+        .get()
+        .expect("text store not initialized")
+        .lock()
+        .expect("text store mutex poisoned")
+        .insert(name.to_string(), info);
 }
 
 impl TryFrom<serde_json::Value> for CrateInfo {
@@ -55,18 +75,30 @@ impl TryFrom<serde_json::Value> for CrateInfo {
         Ok(Self {
             name: value["crate"]["name"].to_string(),
             version: value["crate"]["newest_version"].to_string(),
+            features: value["versions"][0]["features"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(|x| x.to_string())
+                .collect(),
         })
     }
 }
 
 pub async fn get_crate_info(name: &str) -> Result<CrateInfo> {
+    if let Some(crate_info) = get_stored_crate_info(name) {
+        info!("Got crate data from store: {:?}", crate_info);
+        return Ok(crate_info);
+    }
+    info!("Getting crate data from crates.io for: {}", name);
     let crate_data = CLIENT
         .get(CRATE_URL.replace("{crate_name}", name))
         .send()
         .await?
         .json::<serde_json::Value>()
         .await?;
-    let crate_data = crate_data.try_into();
+    let crate_data: CrateInfo = crate_data.try_into()?;
+    write_crate_info_to_store(name, crate_data.clone());
     info!("Got crate data: {:?}", crate_data);
-    crate_data
+    Ok(crate_data)
 }
