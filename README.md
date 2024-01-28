@@ -2,9 +2,9 @@
 
 This LSP server will spare you from going over to crates.io/docs.rs/... to find whatever package version is the latest one. Inspired by some videos of people having this functionality in vsc\*de. Can't let those pesky vsc\*de soyboy developers get away with having more features (support for vsc\*de will maybe be added in the future)...
 
-## Supported features
+## Supported features 🧰
 
-Currently server is capable of supplying:
+Currently, server is capable of supplying:
 - latest version of the crate
 - feature names
 
@@ -18,6 +18,6 @@ $ cd cargotomllsp
 $ cargo install --path .
 ```
 
-### Neovim
+### Neovim ⚡
 
 WIP. But currently if you want a quick way to attach it to a buffer, then run the code from `attach_lsp.lua` in a buffer you want to attach to.
