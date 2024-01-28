@@ -2,6 +2,12 @@
 
 This LSP server will spare you from going over to crates.io/docs.rs/... to find whatever package version is the latest one. Inspired by some videos of people having this functionality in vsc\*de. Can't let those pesky vsc\*de soyboy developers get away with having more features (support for vsc\*de will maybe be added in the future)...
 
+## Supported features
+
+Currently server is capable of supplying:
+- latest version of the crate
+- feature names
+
 ## Usage 🛠️
 
 In the future this will maybe be available through [Mason](https://github.com/williamboman/mason.nvim). For now, you have to have Rust installed, and then you have to install by running:
