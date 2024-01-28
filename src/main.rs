@@ -1,6 +1,13 @@
 use anyhow::Result;
+use cargotomllsp::{
+    completion_handler::handle_completion, cratesio::init_crate_store,
+    notification_handlers::handle_doc_change, text_store::init_text_store,
+};
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
+    init_crate_store();
+    init_text_store();
     let (connection, io_threads) = lsp_server::Connection::stdio();
 
     let server_capabilities = serde_json::to_value(lsp_types::ServerCapabilities {
@@ -15,19 +22,22 @@ fn main() -> Result<()> {
                 work_done_progress: None,
             },
         }),
-        definition_provider: Some(lsp_types::OneOf::Left(true)),
+        // definition_provider: Some(lsp_types::OneOf::Left(true)),
+        text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Kind(
+            lsp_types::TextDocumentSyncKind::FULL,
+        )),
         ..Default::default()
     })?;
     eprintln!("Starting the server");
     let params = connection.initialize(server_capabilities)?;
-    lsp_loop(connection, params)?;
+    lsp_loop(connection, params).await?;
 
     io_threads.join()?;
     eprintln!("Closing the server");
     Ok(())
 }
 
-fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value) -> Result<()> {
+async fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value) -> Result<()> {
     eprintln!("Waiting for msgs...");
     for msg in &connection.receiver {
         eprintln!("Got a msg: {msg:?}");
@@ -38,14 +48,35 @@ fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value) -> Re
                 }
 
                 match cast::<lsp_types::request::Completion>(req) {
-                    Ok((id, params)) => eprintln!("Wow, {:?}: {:?}", id, params),
+                    Ok((id, params)) => {
+                        let completion_response =
+                            match serde_json::to_value(&handle_completion(params).await?) {
+                                Ok(value) => value,
+                                Err(err) => {
+                                    eprintln!("{:?}", err);
+                                    serde_json::Value::Null
+                                }
+                            };
+                        connection.sender.send(lsp_server::Message::Response(
+                            lsp_server::Response {
+                                id,
+                                result: Some(completion_response),
+                                error: None,
+                            },
+                        ))?
+                    }
                     Err(err) => eprintln!("{:?}", err),
+                };
+            }
+
+            lsp_server::Message::Notification(req) => match req.method.as_str() {
+                "textDocument/didSave" => {
+                    eprintln!("Did save: {:?}", req);
                 }
-            }
-            lsp_server::Message::Notification(req) => {
-                eprintln!("Yup, its a notification...");
-                eprintln!("req: {:?}", req);
-            }
+                "textDocument/didChange" => handle_doc_change(req),
+                _ => eprintln!("Unhandled notification: {:?}", req),
+            },
+
             _ => {}
         }
     }
