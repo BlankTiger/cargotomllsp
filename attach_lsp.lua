@@ -1,4 +1,3 @@
-print("a")
 vim.lsp.start({
 	name = "cargotomllsp",
 	cmd = { "cargotomllsp" },
@@ -7,8 +6,8 @@ vim.lsp.start({
 
 vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
-		print("hello lsp")
-		print(vim.inspect(args))
+		-- print(vim.inspect(args))
 		-- vim.keymap.set('n', 'K', vim.lsp.buf.hover, { buffer = args.buf })
+		vim.keymap.set('n', '<C-k>', vim.cmd [[ LspRestart ]], { buffer = args.buf })
 	end,
 })

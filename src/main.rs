@@ -53,7 +53,7 @@ async fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value)
                             match serde_json::to_value(&handle_completion(params).await?) {
                                 Ok(value) => value,
                                 Err(err) => {
-                                    eprintln!("{:?}", err);
+                                    info!("{:?}", err);
                                     serde_json::Value::Null
                                 }
                             };
@@ -65,16 +65,16 @@ async fn lsp_loop(connection: lsp_server::Connection, params: serde_json::Value)
                             },
                         ))?
                     }
-                    Err(err) => eprintln!("{:?}", err),
+                    Err(err) => error!("{:?}", err),
                 };
             }
 
             lsp_server::Message::Notification(req) => match req.method.as_str() {
                 "textDocument/didSave" => {
-                    eprintln!("Did save: {:?}", req);
+                    info!("Did save: {:?}", req);
                 }
                 "textDocument/didChange" => handle_doc_change(req),
-                _ => eprintln!("Unhandled notification: {:?}", req),
+                _ => warn!("Unhandled notification: {:?}", req),
             },
 
             _ => {}

@@ -1,5 +1,6 @@
 use super::text_store::TEXT_STORE;
 use std::io::Write;
+use tracing::info;
 
 pub fn handle_doc_change(req: lsp_server::Notification) {
     let params = req
@@ -9,12 +10,12 @@ pub fn handle_doc_change(req: lsp_server::Notification) {
     let text = params.content_changes[0].text.to_string();
 
     if params.content_changes.len() > 1 {
-        eprintln!("More than one content change, please be wary");
+        info!("More than one content change, please be wary");
     }
 
     let mut file = std::fs::File::create("/home/blanktiger/cargotomllsp.toml").unwrap();
     file.write_all(text.as_bytes()).unwrap();
-    eprintln!("Did change: {:?}", uri);
+    info!("Did change: {:?}", uri);
     TEXT_STORE
         .get()
         .expect("text store not initialized")
