@@ -1,9 +1,12 @@
 use anyhow::Result;
 use once_cell::sync::Lazy;
 use reqwest::header::HeaderMap;
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex, OnceLock},
+};
+use tracing::info;
 
 // static CRATES_URL: &str = "https://crates.io/api/v1/crates";
 static CRATE_URL: &str = "https://crates.io/api/v1/crates/{crate_name}";
@@ -63,5 +66,7 @@ pub async fn get_crate_info(name: &str) -> Result<CrateInfo> {
         .await?
         .json::<serde_json::Value>()
         .await?;
-    crate_data.try_into()
+    let crate_data = crate_data.try_into();
+    info!("Got crate data: {:?}", crate_data);
+    crate_data
 }
