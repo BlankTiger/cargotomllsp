@@ -20,4 +20,12 @@ $ cargo install --path .
 
 ### Neovim ⚡
 
-WIP. But currently if you want a quick way to attach it to a buffer, then run the code from `attach_lsp.lua` in a buffer you want to attach to.
+WIP. But currently if you want a quick way to attach it to a buffer, then run the code from `attach_lsp.lua` in a buffer you want to attach to. A quick way to run lua code in neovim is to use the following command:
+
+```lua
+luafile <path-to-file>
+```
+
+## Logging
+
+Server should be outputting logs to `$HOME/.local/state/cargotomllsp.log`.
