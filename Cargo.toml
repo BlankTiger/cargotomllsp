@@ -2,6 +2,12 @@
 name = "cargotomllsp"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A LSP server for Cargo.toml files"
+repository = "https://github.com/BlankTiger/cargotomllsp"
+readme = "README.md"
+keywords = ["lsp", "cargo", "toml"]
+categories = ["development-tools"]
 
 [dependencies]
 anyhow = "1.0.75"
